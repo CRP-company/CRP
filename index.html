@@ -32,11 +32,6 @@
             --transition-fast: 0.35s cubic-bezier(0.22, 0.08, 0.18, 1);
             --font-heading: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
             --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-            --hero-image: url('enhance_zlgchowk6sa22dm35zdj.png');
-            --lens-x: 50%;
-            --lens-y: 50%;
-            --lens-radius: 0px;
-            --lens-opacity: 0;
         }
 
         *,
@@ -132,80 +127,14 @@
             overflow: hidden;
             padding: 0 6vw;
             background-color: var(--bg-dark);
-            cursor: crosshair;
         }
 
-        .hero-bg {
+        /* Silk canvas container */
+        #silk-container {
             position: absolute;
-            inset: -5%;
+            inset: 0;
             z-index: 0;
-            background-image: var(--hero-image);
-            background-size: cover;
-            background-position: center 30%;
-            background-repeat: no-repeat;
-            animation: hero-breathe 14s ease-in-out infinite;
-        }
-
-        .hero-bg::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(ellipse 60% 50% at 40% 40%, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.55) 100%);
             pointer-events: none;
-        }
-
-        /* ── Lens effect layer ── */
-        .hero-lens {
-            position: absolute;
-            inset: -5%;
-            z-index: 1;
-            background-image: var(--hero-image);
-            background-size: cover;
-            background-position: center 30%;
-            background-repeat: no-repeat;
-            pointer-events: none;
-            clip-path: circle(var(--lens-radius) at var(--lens-x) var(--lens-y));
-            opacity: var(--lens-opacity);
-            transition: opacity 0.6s ease;
-            animation: hero-breathe 14s ease-in-out infinite, lens-spin 20s linear infinite;
-            filter: brightness(1.35) contrast(1.08) saturate(0.7);
-            mix-blend-mode: soft-light;
-        }
-
-        .hero-lens::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at var(--lens-x) var(--lens-y),
-                    rgba(255, 255, 255, 0.15) 0%,
-                    rgba(255, 255, 255, 0.04) 40%,
-                    transparent 70%);
-            pointer-events: none;
-        }
-
-        @keyframes lens-spin {
-            0% {
-                transform: rotate(0deg) scale(1);
-            }
-            50% {
-                transform: rotate(3deg) scale(1.03);
-            }
-            100% {
-                transform: rotate(0deg) scale(1);
-            }
-        }
-
-        @keyframes hero-breathe {
-            0%,
-            100% {
-                transform: scale(1);
-            }
-            35% {
-                transform: scale(1.025);
-            }
-            65% {
-                transform: scale(1.008);
-            }
         }
 
         .hero-content {
@@ -820,12 +749,6 @@
                 height: 30px;
                 border-radius: 18px;
             }
-            .hero-lens {
-                display: none;
-            }
-            .hero {
-                cursor: default;
-            }
         }
 
         @media (max-width: 480px) {
@@ -868,9 +791,9 @@
     <div class="grid-overlay" aria-hidden="true"></div>
 
     <!-- ═══════════ 1. HERO ═══════════ -->
-    <section class="hero section" id="heroSection">
-        <div class="hero-bg" aria-hidden="true"></div>
-        <div class="hero-lens" aria-hidden="true"></div>
+    <section class="hero section">
+        <!-- Silk background container -->
+        <div id="silk-container"></div>
         <div class="hero-content reveal">
             <span class="hero-brand">CRP</span>
             <h1 class="hero-headline">
@@ -1059,6 +982,151 @@
         </div>
     </footer>
 
+    <!-- Import map for React, Three.js, and React Three Fiber -->
+    <script type="importmap">
+        {
+            "imports": {
+                "react": "https://esm.sh/react@18",
+                "react-dom/client": "https://esm.sh/react-dom@18/client",
+                "@react-three/fiber": "https://esm.sh/@react-three/fiber@8",
+                "three": "https://esm.sh/three@0.158.0"
+            }
+        }
+    </script>
+
+    <!-- Silk component and rendering -->
+    <script type="module">
+        import React, { forwardRef, useRef, useMemo, useLayoutEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Canvas, useFrame, useThree } from '@react-three/fiber';
+        import { Color } from 'three';
+
+        // ── Helpers ──
+        const hexToNormalizedRGB = (hex) => {
+            hex = hex.replace('#', '');
+            return [
+                parseInt(hex.slice(0, 2), 16) / 255,
+                parseInt(hex.slice(2, 4), 16) / 255,
+                parseInt(hex.slice(4, 6), 16) / 255
+            ];
+        };
+
+        // ── Shaders ──
+        const vertexShader = `
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            void main() {
+                vPosition = position;
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+
+        const fragmentShader = `
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            uniform float uTime;
+            uniform vec3  uColor;
+            uniform float uSpeed;
+            uniform float uScale;
+            uniform float uRotation;
+            uniform float uNoiseIntensity;
+            const float e = 2.71828182845904523536;
+            float noise(vec2 texCoord) {
+                float G = e;
+                vec2  r = (G * sin(G * texCoord));
+                return fract(r.x * r.y * (1.0 + texCoord.x));
+            }
+            vec2 rotateUvs(vec2 uv, float angle) {
+                float c = cos(angle);
+                float s = sin(angle);
+                mat2  rot = mat2(c, -s, s, c);
+                return rot * uv;
+            }
+            void main() {
+                float rnd        = noise(gl_FragCoord.xy);
+                vec2  uv         = rotateUvs(vUv * uScale, uRotation);
+                vec2  tex        = uv * uScale;
+                float tOffset    = uSpeed * uTime;
+                tex.y += 0.03 * sin(8.0 * tex.x - tOffset);
+                float pattern = 0.6 +
+                                0.4 * sin(5.0 * (tex.x + tex.y +
+                                                cos(3.0 * tex.x + 5.0 * tex.y) +
+                                                0.02 * tOffset) +
+                                        sin(20.0 * (tex.x + tex.y - 0.1 * tOffset)));
+                vec4 col = vec4(uColor, 1.0) * vec4(pattern) - rnd / 15.0 * uNoiseIntensity;
+                col.a = 1.0;
+                gl_FragColor = col;
+            }
+        `;
+
+        // ── SilkPlane ──
+        const SilkPlane = forwardRef(function SilkPlane({ uniforms }, ref) {
+            const { viewport } = useThree();
+
+            useLayoutEffect(() => {
+                if (ref.current) {
+                    ref.current.scale.set(viewport.width, viewport.height, 1);
+                }
+            }, [ref, viewport]);
+
+            useFrame((_, delta) => {
+                ref.current.material.uniforms.uTime.value += 0.1 * delta;
+            });
+
+            return (
+                React.createElement('mesh', { ref },
+                    React.createElement('planeGeometry', { args: [1, 1, 1, 1] }),
+                    React.createElement('shaderMaterial', {
+                        uniforms,
+                        vertexShader,
+                        fragmentShader
+                    })
+                )
+            );
+        });
+        SilkPlane.displayName = 'SilkPlane';
+
+        // ── Silk component ──
+        const Silk = ({ speed = 5, scale = 1, color = '#7B7481', noiseIntensity = 1.5, rotation = 0 }) => {
+            const meshRef = useRef();
+
+            const uniforms = useMemo(
+                () => ({
+                    uSpeed: { value: speed },
+                    uScale: { value: scale },
+                    uNoiseIntensity: { value: noiseIntensity },
+                    uColor: { value: new Color(...hexToNormalizedRGB(color)) },
+                    uRotation: { value: rotation },
+                    uTime: { value: 0 }
+                }),
+                [speed, scale, noiseIntensity, color, rotation]
+            );
+
+            return React.createElement(
+                Canvas,
+                { dpr: [1, 2], frameloop: 'always' },
+                React.createElement(SilkPlane, { ref: meshRef, uniforms })
+            );
+        };
+
+        // ── Render into hero container ──
+        const container = document.getElementById('silk-container');
+        if (container) {
+            const root = createRoot(container);
+            root.render(
+                React.createElement(Silk, {
+                    speed: 5,
+                    scale: 1,
+                    color: '#ffffff',
+                    noiseIntensity: 1.5,
+                    rotation: 0
+                })
+            );
+        }
+    </script>
+
+    <!-- Scroll animations and other scripts -->
     <script>
         (function() {
             const revealElements = document.querySelectorAll('.reveal');
@@ -1099,26 +1167,7 @@
                 window.addEventListener('scroll', handleScroll, { passive: true });
             }
 
-            const heroBg = document.querySelector('.hero-bg');
-            if (heroBg && window.innerWidth > 768) {
-                let rafId;
-                const handleParallax = () => {
-                    if (rafId) return;
-                    rafId = requestAnimationFrame(() => {
-                        const scrollY = window.scrollY;
-                        const heroSection = document.querySelector('.hero');
-                        const heroHeight = heroSection ? heroSection.offsetHeight : window.innerHeight;
-                        if (scrollY < heroHeight) {
-                            const offset = scrollY * 0.04;
-                            heroBg.style.transform = `translateY(${offset}px) scale(1.025)`;
-                        }
-                        rafId = null;
-                    });
-                };
-                window.addEventListener('scroll', handleParallax, { passive: true });
-            }
-
-            // ── Product image placeholder ──
+            // Product image placeholder (unchanged)
             const productImageUrl = '';
             const placeholder = document.getElementById('productImagePlaceholder');
             if (placeholder && productImageUrl) {
@@ -1133,85 +1182,6 @@
                 img.onerror = function() {
                     placeholder.classList.remove('has-image');
                 };
-            }
-
-            // ── Hero lens effect ──
-            const heroSection = document.getElementById('heroSection');
-            const root = document.documentElement;
-
-            if (heroSection && window.innerWidth > 768) {
-                let targetX = 50;
-                let targetY = 50;
-                let currentX = 50;
-                let currentY = 50;
-                let targetRadius = 0;
-                let currentRadius = 0;
-                let isHovering = false;
-                let animationId = null;
-
-                const LENS_RADIUS = 100;
-                const LERP_SPEED = 0.08;
-
-                heroSection.addEventListener('mousemove', function(e) {
-                    const rect = heroSection.getBoundingClientRect();
-                    const x = ((e.clientX - rect.left) / rect.width) * 100;
-                    const y = ((e.clientY - rect.top) / rect.height) * 100;
-                    targetX = Math.max(0, Math.min(100, x));
-                    targetY = Math.max(0, Math.min(100, y));
-                    targetRadius = LENS_RADIUS;
-                    isHovering = true;
-
-                    if (!animationId) {
-                        animationId = requestAnimationFrame(animateLens);
-                    }
-                });
-
-                heroSection.addEventListener('mouseleave', function() {
-                    targetRadius = 0;
-                    isHovering = false;
-                    if (!animationId) {
-                        animationId = requestAnimationFrame(animateLens);
-                    }
-                });
-
-                function animateLens() {
-                    currentX += (targetX - currentX) * LERP_SPEED;
-                    currentY += (targetY - currentY) * LERP_SPEED;
-                    currentRadius += (targetRadius - currentRadius) * LERP_SPEED;
-
-                    root.style.setProperty('--lens-x', currentX + '%');
-                    root.style.setProperty('--lens-y', currentY + '%');
-                    root.style.setProperty('--lens-radius', currentRadius + 'px');
-
-                    if (currentRadius > 2) {
-                        root.style.setProperty('--lens-opacity', '1');
-                    } else if (currentRadius < 1 && !isHovering) {
-                        root.style.setProperty('--lens-opacity', '0');
-                    } else {
-                        const opacity = Math.min(1, currentRadius / 40);
-                        root.style.setProperty('--lens-opacity', opacity);
-                    }
-
-                    const stillAnimating =
-                        Math.abs(targetX - currentX) > 0.15 ||
-                        Math.abs(targetY - currentY) > 0.15 ||
-                        Math.abs(targetRadius - currentRadius) > 0.3;
-
-                    if (stillAnimating) {
-                        animationId = requestAnimationFrame(animateLens);
-                    } else {
-                        currentX = targetX;
-                        currentY = targetY;
-                        currentRadius = targetRadius;
-                        root.style.setProperty('--lens-x', currentX + '%');
-                        root.style.setProperty('--lens-y', currentY + '%');
-                        root.style.setProperty('--lens-radius', currentRadius + 'px');
-                        if (currentRadius < 1) {
-                            root.style.setProperty('--lens-opacity', '0');
-                        }
-                        animationId = null;
-                    }
-                }
             }
         })();
     </script>

@@ -33,6 +33,10 @@
             --font-heading: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
             --font-body: 'Inter', system-ui, -apple-system, sans-serif;
             --hero-image: url('enhance_zlgchowk6sa22dm35zdj.png');
+            --lens-x: 50%;
+            --lens-y: 50%;
+            --lens-radius: 0px;
+            --lens-opacity: 0;
         }
 
         *,
@@ -128,6 +132,7 @@
             overflow: hidden;
             padding: 0 6vw;
             background-color: var(--bg-dark);
+            cursor: crosshair;
         }
 
         .hero-bg {
@@ -149,6 +154,47 @@
             pointer-events: none;
         }
 
+        /* ── Lens effect layer ── */
+        .hero-lens {
+            position: absolute;
+            inset: -5%;
+            z-index: 1;
+            background-image: var(--hero-image);
+            background-size: cover;
+            background-position: center 30%;
+            background-repeat: no-repeat;
+            pointer-events: none;
+            clip-path: circle(var(--lens-radius) at var(--lens-x) var(--lens-y));
+            opacity: var(--lens-opacity);
+            transition: opacity 0.6s ease;
+            animation: hero-breathe 14s ease-in-out infinite, lens-spin 20s linear infinite;
+            filter: brightness(1.35) contrast(1.08) saturate(0.7);
+            mix-blend-mode: soft-light;
+        }
+
+        .hero-lens::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at var(--lens-x) var(--lens-y),
+                    rgba(255, 255, 255, 0.15) 0%,
+                    rgba(255, 255, 255, 0.04) 40%,
+                    transparent 70%);
+            pointer-events: none;
+        }
+
+        @keyframes lens-spin {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            50% {
+                transform: rotate(3deg) scale(1.03);
+            }
+            100% {
+                transform: rotate(0deg) scale(1);
+            }
+        }
+
         @keyframes hero-breathe {
             0%,
             100% {
@@ -168,6 +214,7 @@
             text-align: center;
             max-width: 820px;
             margin: 0 auto;
+            pointer-events: none;
         }
 
         .hero-brand {
@@ -210,6 +257,7 @@
             gap: 10px;
             opacity: 0.45;
             transition: opacity 0.6s ease;
+            pointer-events: none;
         }
 
         .scroll-indicator-line {
@@ -772,6 +820,12 @@
                 height: 30px;
                 border-radius: 18px;
             }
+            .hero-lens {
+                display: none;
+            }
+            .hero {
+                cursor: default;
+            }
         }
 
         @media (max-width: 480px) {
@@ -814,8 +868,9 @@
     <div class="grid-overlay" aria-hidden="true"></div>
 
     <!-- ═══════════ 1. HERO ═══════════ -->
-    <section class="hero section">
+    <section class="hero section" id="heroSection">
         <div class="hero-bg" aria-hidden="true"></div>
+        <div class="hero-lens" aria-hidden="true"></div>
         <div class="hero-content reveal">
             <span class="hero-brand">CRP</span>
             <h1 class="hero-headline">
@@ -1063,8 +1118,8 @@
                 window.addEventListener('scroll', handleParallax, { passive: true });
             }
 
-            // ── Product image placeholder: replace the URL below with your image ──
-            const productImageUrl = ''; // ← Paste your image URL between the quotes
+            // ── Product image placeholder ──
+            const productImageUrl = '';
             const placeholder = document.getElementById('productImagePlaceholder');
             if (placeholder && productImageUrl) {
                 const img = document.createElement('img');
@@ -1078,6 +1133,85 @@
                 img.onerror = function() {
                     placeholder.classList.remove('has-image');
                 };
+            }
+
+            // ── Hero lens effect ──
+            const heroSection = document.getElementById('heroSection');
+            const root = document.documentElement;
+
+            if (heroSection && window.innerWidth > 768) {
+                let targetX = 50;
+                let targetY = 50;
+                let currentX = 50;
+                let currentY = 50;
+                let targetRadius = 0;
+                let currentRadius = 0;
+                let isHovering = false;
+                let animationId = null;
+
+                const LENS_RADIUS = 100;
+                const LERP_SPEED = 0.08;
+
+                heroSection.addEventListener('mousemove', function(e) {
+                    const rect = heroSection.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    targetX = Math.max(0, Math.min(100, x));
+                    targetY = Math.max(0, Math.min(100, y));
+                    targetRadius = LENS_RADIUS;
+                    isHovering = true;
+
+                    if (!animationId) {
+                        animationId = requestAnimationFrame(animateLens);
+                    }
+                });
+
+                heroSection.addEventListener('mouseleave', function() {
+                    targetRadius = 0;
+                    isHovering = false;
+                    if (!animationId) {
+                        animationId = requestAnimationFrame(animateLens);
+                    }
+                });
+
+                function animateLens() {
+                    currentX += (targetX - currentX) * LERP_SPEED;
+                    currentY += (targetY - currentY) * LERP_SPEED;
+                    currentRadius += (targetRadius - currentRadius) * LERP_SPEED;
+
+                    root.style.setProperty('--lens-x', currentX + '%');
+                    root.style.setProperty('--lens-y', currentY + '%');
+                    root.style.setProperty('--lens-radius', currentRadius + 'px');
+
+                    if (currentRadius > 2) {
+                        root.style.setProperty('--lens-opacity', '1');
+                    } else if (currentRadius < 1 && !isHovering) {
+                        root.style.setProperty('--lens-opacity', '0');
+                    } else {
+                        const opacity = Math.min(1, currentRadius / 40);
+                        root.style.setProperty('--lens-opacity', opacity);
+                    }
+
+                    const stillAnimating =
+                        Math.abs(targetX - currentX) > 0.15 ||
+                        Math.abs(targetY - currentY) > 0.15 ||
+                        Math.abs(targetRadius - currentRadius) > 0.3;
+
+                    if (stillAnimating) {
+                        animationId = requestAnimationFrame(animateLens);
+                    } else {
+                        currentX = targetX;
+                        currentY = targetY;
+                        currentRadius = targetRadius;
+                        root.style.setProperty('--lens-x', currentX + '%');
+                        root.style.setProperty('--lens-y', currentY + '%');
+                        root.style.setProperty('--lens-radius', currentRadius + 'px');
+                        if (currentRadius < 1) {
+                            root.style.setProperty('--lens-opacity', '0');
+                        }
+                        animationId = null;
+                    }
+                }
             }
         })();
     </script>

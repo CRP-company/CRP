@@ -313,31 +313,19 @@
             padding-top: 7rem;
             padding-bottom: 7rem;
             text-align: center;
-            overflow: hidden;
         }
 
         .idea-visual {
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
+            flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 4rem;
-            max-width: 480px;
+            max-width: 420px;
             margin-left: auto;
             margin-right: auto;
             padding: 0 20px;
-            position: relative;
-        }
-
-        .msg-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            position: relative;
         }
 
         .msg-bubble {
@@ -345,9 +333,8 @@
             border-radius: 20px;
             background: #3a3a42;
             flex-shrink: 0;
+            transition: all var(--transition-medium);
             opacity: 0.55;
-            position: relative;
-            will-change: transform;
         }
 
         .msg-bubble.short {
@@ -363,175 +350,6 @@
             width: 40px;
         }
 
-        /* ── The drifting animation for gray messages ── */
-        .msg-bubble.drift {
-            animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
-            animation-iteration-count: infinite;
-            animation-direction: alternate;
-            animation-fill-mode: both;
-        }
-
-        /* Each bubble gets a unique animation name via nth-child or custom classes */
-        .msg-bubble.drift-1 {
-            animation-name: drift-1;
-            animation-duration: 7.2s;
-        }
-        .msg-bubble.drift-2 {
-            animation-name: drift-2;
-            animation-duration: 8.6s;
-        }
-        .msg-bubble.drift-3 {
-            animation-name: drift-3;
-            animation-duration: 6.4s;
-        }
-        .msg-bubble.drift-4 {
-            animation-name: drift-4;
-            animation-duration: 9.1s;
-        }
-        .msg-bubble.drift-5 {
-            animation-name: drift-5;
-            animation-duration: 7.8s;
-        }
-        .msg-bubble.drift-6 {
-            animation-name: drift-6;
-            animation-duration: 8.2s;
-        }
-        .msg-bubble.drift-7 {
-            animation-name: drift-7;
-            animation-duration: 6.9s;
-        }
-        .msg-bubble.drift-8 {
-            animation-name: drift-8;
-            animation-duration: 9.5s;
-        }
-        .msg-bubble.drift-9 {
-            animation-name: drift-9;
-            animation-duration: 7.4s;
-        }
-        .msg-bubble.drift-10 {
-            animation-name: drift-10;
-            animation-duration: 8.8s;
-        }
-        .msg-bubble.drift-11 {
-            animation-name: drift-11;
-            animation-duration: 6.1s;
-        }
-        .msg-bubble.drift-12 {
-            animation-name: drift-12;
-            animation-duration: 9.9s;
-        }
-        .msg-bubble.drift-13 {
-            animation-name: drift-13;
-            animation-duration: 7.0s;
-        }
-
-        /* Keyframes — each moves a different horizontal amount */
-        @keyframes drift-1 {
-            0% {
-                transform: translateX(-18px);
-            }
-            100% {
-                transform: translateX(14px);
-            }
-        }
-        @keyframes drift-2 {
-            0% {
-                transform: translateX(12px);
-            }
-            100% {
-                transform: translateX(-16px);
-            }
-        }
-        @keyframes drift-3 {
-            0% {
-                transform: translateX(-10px);
-            }
-            100% {
-                transform: translateX(20px);
-            }
-        }
-        @keyframes drift-4 {
-            0% {
-                transform: translateX(22px);
-            }
-            100% {
-                transform: translateX(-8px);
-            }
-        }
-        @keyframes drift-5 {
-            0% {
-                transform: translateX(-14px);
-            }
-            100% {
-                transform: translateX(10px);
-            }
-        }
-        @keyframes drift-6 {
-            0% {
-                transform: translateX(8px);
-            }
-            100% {
-                transform: translateX(-20px);
-            }
-        }
-        @keyframes drift-7 {
-            0% {
-                transform: translateX(-22px);
-            }
-            100% {
-                transform: translateX(6px);
-            }
-        }
-        @keyframes drift-8 {
-            0% {
-                transform: translateX(16px);
-            }
-            100% {
-                transform: translateX(-12px);
-            }
-        }
-        @keyframes drift-9 {
-            0% {
-                transform: translateX(-6px);
-            }
-            100% {
-                transform: translateX(18px);
-            }
-        }
-        @keyframes drift-10 {
-            0% {
-                transform: translateX(20px);
-            }
-            100% {
-                transform: translateX(-14px);
-            }
-        }
-        @keyframes drift-11 {
-            0% {
-                transform: translateX(-12px);
-            }
-            100% {
-                transform: translateX(8px);
-            }
-        }
-        @keyframes drift-12 {
-            0% {
-                transform: translateX(10px);
-            }
-            100% {
-                transform: translateX(-18px);
-            }
-        }
-        @keyframes drift-13 {
-            0% {
-                transform: translateX(-16px);
-            }
-            100% {
-                transform: translateX(12px);
-            }
-        }
-
-        /* The important message stays still */
         .msg-bubble.important {
             background: #f0f0f2;
             opacity: 1;
@@ -540,8 +358,6 @@
             border-radius: 22px;
             box-shadow: 0 0 30px rgba(240, 240, 242, 0.25);
             position: relative;
-            animation: none !important;
-            transform: none !important;
         }
 
         .msg-bubble.important::after {
@@ -551,6 +367,15 @@
             border-radius: 24px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             pointer-events: none;
+        }
+
+        .msg-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
         }
 
         .idea-text {
@@ -948,110 +773,6 @@
                 height: 30px;
                 border-radius: 18px;
             }
-            @keyframes drift-1 {
-                0% {
-                    transform: translateX(-10px);
-                }
-                100% {
-                    transform: translateX(8px);
-                }
-            }
-            @keyframes drift-2 {
-                0% {
-                    transform: translateX(7px);
-                }
-                100% {
-                    transform: translateX(-9px);
-                }
-            }
-            @keyframes drift-3 {
-                0% {
-                    transform: translateX(-6px);
-                }
-                100% {
-                    transform: translateX(11px);
-                }
-            }
-            @keyframes drift-4 {
-                0% {
-                    transform: translateX(12px);
-                }
-                100% {
-                    transform: translateX(-5px);
-                }
-            }
-            @keyframes drift-5 {
-                0% {
-                    transform: translateX(-8px);
-                }
-                100% {
-                    transform: translateX(6px);
-                }
-            }
-            @keyframes drift-6 {
-                0% {
-                    transform: translateX(5px);
-                }
-                100% {
-                    transform: translateX(-11px);
-                }
-            }
-            @keyframes drift-7 {
-                0% {
-                    transform: translateX(-12px);
-                }
-                100% {
-                    transform: translateX(4px);
-                }
-            }
-            @keyframes drift-8 {
-                0% {
-                    transform: translateX(9px);
-                }
-                100% {
-                    transform: translateX(-7px);
-                }
-            }
-            @keyframes drift-9 {
-                0% {
-                    transform: translateX(-4px);
-                }
-                100% {
-                    transform: translateX(10px);
-                }
-            }
-            @keyframes drift-10 {
-                0% {
-                    transform: translateX(11px);
-                }
-                100% {
-                    transform: translateX(-8px);
-                }
-            }
-            @keyframes drift-11 {
-                0% {
-                    transform: translateX(-7px);
-                }
-                100% {
-                    transform: translateX(5px);
-                }
-            }
-            @keyframes drift-12 {
-                0% {
-                    transform: translateX(6px);
-                }
-                100% {
-                    transform: translateX(-10px);
-                }
-            }
-            @keyframes drift-13 {
-                0% {
-                    transform: translateX(-9px);
-                }
-                100% {
-                    transform: translateX(7px);
-                }
-            }
         }
 
         @media (max-width: 480px) {
@@ -1156,30 +877,27 @@
             <div class="reveal">
                 <div class="idea-visual" aria-hidden="true">
                     <div class="msg-row">
-                        <span class="msg-bubble medium drift drift-1"></span>
-                        <span class="msg-bubble short drift drift-2"></span>
-                        <span class="msg-bubble xshort drift drift-3"></span>
+                        <span class="msg-bubble medium"></span>
+                        <span class="msg-bubble short"></span>
+                        <span class="msg-bubble xshort"></span>
                     </div>
                     <div class="msg-row">
-                        <span class="msg-bubble long drift drift-4"></span>
-                        <span class="msg-bubble xshort drift drift-5"></span>
+                        <span class="msg-bubble long"></span>
+                        <span class="msg-bubble xshort"></span>
                     </div>
                     <div class="msg-row">
-                        <span class="msg-bubble short drift drift-6"></span>
+                        <span class="msg-bubble short"></span>
                         <span class="msg-bubble important"></span>
-                        <span class="msg-bubble medium drift drift-7"></span>
+                        <span class="msg-bubble medium"></span>
                     </div>
                     <div class="msg-row">
-                        <span class="msg-bubble xshort drift drift-8"></span>
-                        <span class="msg-bubble long drift drift-9"></span>
+                        <span class="msg-bubble xshort"></span>
+                        <span class="msg-bubble long"></span>
                     </div>
                     <div class="msg-row">
-                        <span class="msg-bubble medium drift drift-10"></span>
-                        <span class="msg-bubble short drift drift-11"></span>
-                        <span class="msg-bubble xshort drift drift-12"></span>
-                    </div>
-                    <div class="msg-row">
-                        <span class="msg-bubble long drift drift-13"></span>
+                        <span class="msg-bubble medium"></span>
+                        <span class="msg-bubble short"></span>
+                        <span class="msg-bubble xshort"></span>
                     </div>
                 </div>
                 <p class="idea-text">
@@ -1346,7 +1064,8 @@
                 window.addEventListener('scroll', handleParallax, { passive: true });
             }
 
-            const productImageUrl = '';
+            // ── Product image placeholder: replace the URL below with your image ──
+            const productImageUrl = ''; // ← Paste your image URL between the quotes
             const placeholder = document.getElementById('productImagePlaceholder');
             if (placeholder && productImageUrl) {
                 const img = document.createElement('img');
